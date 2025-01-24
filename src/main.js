@@ -50,16 +50,36 @@ let isGameOver = false;
 // カメラの位置
 camera.position.z = 5;
 
-// スコアの表示要素を作成
+// UI要素の作成
 let score = 0;
+const uiContainer = document.createElement('div');
+uiContainer.style.position = 'absolute';
+uiContainer.style.top = '10px';
+uiContainer.style.left = '10px';
+uiContainer.style.fontSize = '20px';
+uiContainer.style.color = 'white';
+document.body.appendChild(uiContainer);
+
+// スコア表示
 const scoreDisplay = document.createElement('div');
-scoreDisplay.style.position = 'absolute';
-scoreDisplay.style.top = '10px';
-scoreDisplay.style.left = '10px';
-scoreDisplay.style.fontSize = '20px';
-scoreDisplay.style.color = 'white';
 scoreDisplay.textContent = `Score: ${score}`;
-document.body.appendChild(scoreDisplay);
+uiContainer.appendChild(scoreDisplay);
+
+// 結果表示
+const resultDisplay = document.createElement('div');
+resultDisplay.style.position = 'absolute';
+resultDisplay.style.top = '50%';
+resultDisplay.style.left = '50%';
+resultDisplay.style.transform = 'translate(-50%, -50%)';
+resultDisplay.style.fontSize = '48px';
+resultDisplay.style.fontWeight = 'bold';
+resultDisplay.style.color = 'white';
+resultDisplay.style.textShadow = '2px 2px 4px rgba(0, 0, 0, 0.5)';
+resultDisplay.style.opacity = '0';
+resultDisplay.style.transition = 'opacity 0.3s ease-in-out';
+resultDisplay.style.textAlign = 'center';
+resultDisplay.style.whiteSpace = 'pre-line';
+document.body.appendChild(resultDisplay);
 
 // カードをめくるアニメーション
 function flipSecondCard() {
@@ -107,20 +127,37 @@ function checkGuess(isHigher) {
     if (isCorrect) {
       score++;
       scoreDisplay.textContent = `Score: ${score}`;
+      // 正解表示
+      resultDisplay.textContent = 'CORRECT!';
+      resultDisplay.style.color = '#44ff44';
+      resultDisplay.style.opacity = '1';
       setTimeout(() => {
-        startNewRound();
+        resultDisplay.style.opacity = '0';
+        setTimeout(() => {
+          startNewRound();
+        }, 300);
       }, 1000);
     } else {
-      alert(`Wrong! Game Over. Your final score is ${score}`);
+      // ゲームオーバー表示
+      resultDisplay.textContent = `GAME OVER!\nFinal Score: ${score}`;
+      resultDisplay.style.color = '#ff4444';
+      resultDisplay.style.opacity = '1';
       score = 0;
       scoreDisplay.textContent = `Score: ${score}`;
       isGameOver = true;
+      // 3秒後に結果表示を消す
+      setTimeout(() => {
+        resultDisplay.style.opacity = '0';
+      }, 3000);
     }
   }, 500);
 }
 
 // 新しいラウンドを開始
 function startNewRound() {
+  // 結果表示をクリア
+  resultDisplay.style.opacity = '0';
+  
   // 新しいカードをセット
   firstCardIndex = Math.floor(Math.random() * cardTextures.length);
   secondCardIndex = Math.floor(Math.random() * cardTextures.length);
