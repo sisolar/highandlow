@@ -3,8 +3,9 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.154.0/build/three.m
 
 // シーン、カメラ、レンダラーを初期化
 const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x90caf9); // より淡い青色の背景
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-const renderer = new THREE.WebGLRenderer();
+const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
@@ -38,7 +39,7 @@ const firstCardMaterial = new THREE.MeshBasicMaterial({
 });
 const firstCardMesh = new THREE.Mesh(cardGeometry, firstCardMaterial);
 firstCardMesh.position.x = -2; // 左側に配置
-scene.add(firstCardMesh);
+firstCardMesh.position.z = 0.1; // 影より前に
 
 // 2枚目のカード（表裏の2枚のメッシュを作成）
 let secondCardIndex = Math.floor(Math.random() * cardTextures.length);
@@ -49,8 +50,8 @@ const frontCardMaterial = new THREE.MeshBasicMaterial({
 });
 const frontCardMesh = new THREE.Mesh(cardGeometry, frontCardMaterial);
 frontCardMesh.position.x = 2;
+frontCardMesh.position.z = 0.1;
 frontCardMesh.rotation.y = Math.PI;
-scene.add(frontCardMesh);
 
 // 裏面のカード
 const backCardMaterial = new THREE.MeshBasicMaterial({ 
@@ -59,6 +60,11 @@ const backCardMaterial = new THREE.MeshBasicMaterial({
 });
 const backCardMesh = new THREE.Mesh(cardGeometry, backCardMaterial);
 backCardMesh.position.x = 2;
+backCardMesh.position.z = 0.1;
+
+// シーンに追加
+scene.add(firstCardMesh);
+scene.add(frontCardMesh);
 scene.add(backCardMesh);
 
 // ゲームの状態
