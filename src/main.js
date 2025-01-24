@@ -101,9 +101,14 @@ document.body.appendChild(resultDisplay);
 // カードをめくるアニメーション
 function flipSecondCard() {
   const flipDuration = 500; // ミリ秒
-  let elapsedTime = 0;
+  let startTime = null;
 
-  function flip() {
+  function flip(currentTime) {
+    if (startTime === null) {
+      startTime = currentTime;
+    }
+
+    const elapsedTime = currentTime - startTime;
     if (elapsedTime >= flipDuration) {
       // アニメーション完了時の処理
       frontCardMesh.rotation.y = 0;
@@ -112,18 +117,17 @@ function flipSecondCard() {
     }
 
     requestAnimationFrame(flip);
-    elapsedTime += 16; // 16ms は約 60FPS
     const progress = elapsedTime / flipDuration;
     // イーズアウト関数を使用してスムーズな回転を実現
     const easeProgress = 1 - Math.pow(1 - progress, 3);
     const rotation = easeProgress * Math.PI;
     
-    // 表と裏のカードを同時に回転
-    frontCardMesh.rotation.y = Math.PI - rotation;
-    backCardMesh.rotation.y = rotation;
+    // 表と裏のカードを同時に回転（完全な180度回転）
+    frontCardMesh.rotation.y = Math.PI + (Math.PI * easeProgress);
+    backCardMesh.rotation.y = Math.PI * easeProgress;
   }
 
-  flip();
+  requestAnimationFrame(flip);
 }
 
 // ゲームロジック
