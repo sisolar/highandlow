@@ -209,21 +209,89 @@ function animate() {
 }
 animate();
 
-// ボタンで High / Low を選択
-const highButton = document.createElement('button');
-highButton.textContent = 'High';
-highButton.style.position = 'absolute';
-highButton.style.top = '50px';
-highButton.style.left = '10px';
-highButton.style.fontSize = '16px';
-highButton.onclick = () => checkGuess(true);
-document.body.appendChild(highButton);
+// 矢印のテクスチャを読み込む
+const arrowTexture = loader.load('./public/ui/93.png');
 
-const lowButton = document.createElement('button');
-lowButton.textContent = 'Low';
-lowButton.style.position = 'absolute';
-lowButton.style.top = '50px';
-lowButton.style.left = '80px';
-lowButton.style.fontSize = '16px';
-lowButton.onclick = () => checkGuess(false);
-document.body.appendChild(lowButton);
+// 矢印のジオメトリを作成
+const arrowGeometry = new THREE.PlaneGeometry(1, 1);
+
+// 上向き矢印のメッシュを作成
+const upArrowMaterial = new THREE.MeshBasicMaterial({ 
+  map: arrowTexture,
+  transparent: true,
+  color: 0x44ff44
+});
+const upArrowMesh = new THREE.Mesh(arrowGeometry, upArrowMaterial);
+upArrowMesh.position.set(0, 0.8, 0);
+upArrowMesh.rotation.z = -Math.PI / 2; // -90度回転して上向きに
+scene.add(upArrowMesh);
+
+// 下向き矢印のメッシュを作成
+const downArrowMaterial = new THREE.MeshBasicMaterial({ 
+  map: arrowTexture,
+  transparent: true,
+  color: 0xff4444
+});
+const downArrowMesh = new THREE.Mesh(arrowGeometry, downArrowMaterial);
+downArrowMesh.position.set(0, -0.8, 0);
+downArrowMesh.rotation.z = Math.PI / 2; // 90度回転して下向きに
+scene.add(downArrowMesh);
+
+// クリックイベントの処理
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+
+// クリックイベントリスナー
+window.addEventListener('click', (event) => {
+  // マウス位置を正規化
+  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+  // レイキャスターを更新
+  raycaster.setFromCamera(mouse, camera);
+
+  // 交差判定
+  const intersects = raycaster.intersectObjects([upArrowMesh, downArrowMesh]);
+  
+  if (intersects.length > 0) {
+    const clickedMesh = intersects[0].object;
+    if (clickedMesh === upArrowMesh) {
+      checkGuess(true);  // High
+    } else if (clickedMesh === downArrowMesh) {
+      checkGuess(false); // Low
+    }
+  }
+});
+
+// ホバー効果
+let hoveredArrow = null;
+window.addEventListener('mousemove', (event) => {
+  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+  raycaster.setFromCamera(mouse, camera);
+  const intersects = raycaster.intersectObjects([upArrowMesh, downArrowMesh]);
+
+  if (intersects.length > 0) {
+    const arrow = intersects[0].object;
+    if (hoveredArrow !== arrow) {
+      if (hoveredArrow) {
+        // 前にホバーしていた矢印の色を戻す
+        hoveredArrow.material.color.setHex(
+          hoveredArrow === upArrowMesh ? 0x44ff44 : 0xff4444
+        );
+      }
+      // 新しくホバーした矢印の色を変更
+      arrow.material.color.setHex(0xffff00);
+      hoveredArrow = arrow;
+      document.body.style.cursor = 'pointer';
+    }
+  } else if (hoveredArrow) {
+    // ホバーが外れたら色を戻す
+    hoveredArrow.material.color.setHex(
+      hoveredArrow === upArrowMesh ? 0x44ff44 : 0xff4444
+    );
+    hoveredArrow = null;
+    document.body.style.cursor = 'default';
+  }
+});
