@@ -32,14 +32,20 @@ const cardGeometry = new THREE.PlaneGeometry(2, 3);
 
 // 1枚目のカード（表示される）
 let firstCardIndex = Math.floor(Math.random() * cardTextures.length);
-const firstCardMaterial = new THREE.MeshBasicMaterial({ map: cardTextures[firstCardIndex] });
+const firstCardMaterial = new THREE.MeshBasicMaterial({ 
+  map: cardTextures[firstCardIndex],
+  transparent: true
+});
 const firstCardMesh = new THREE.Mesh(cardGeometry, firstCardMaterial);
 firstCardMesh.position.x = -2; // 左側に配置
 scene.add(firstCardMesh);
 
 // 2枚目のカード（最初は裏面）
 let secondCardIndex = Math.floor(Math.random() * cardTextures.length);
-const secondCardMaterial = new THREE.MeshBasicMaterial({ map: backTexture });
+const secondCardMaterial = new THREE.MeshBasicMaterial({ 
+  map: backTexture,
+  transparent: true
+});
 const secondCardMesh = new THREE.Mesh(cardGeometry, secondCardMaterial);
 secondCardMesh.position.x = 2; // 右側に配置
 scene.add(secondCardMesh);
