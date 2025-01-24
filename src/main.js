@@ -40,15 +40,26 @@ const firstCardMesh = new THREE.Mesh(cardGeometry, firstCardMaterial);
 firstCardMesh.position.x = -2; // 左側に配置
 scene.add(firstCardMesh);
 
-// 2枚目のカード（最初は裏面）
+// 2枚目のカード（表裏の2枚のメッシュを作成）
 let secondCardIndex = Math.floor(Math.random() * cardTextures.length);
-const secondCardMaterial = new THREE.MeshBasicMaterial({ 
+// 表面のカード
+const frontCardMaterial = new THREE.MeshBasicMaterial({ 
+  map: cardTextures[secondCardIndex],
+  transparent: true
+});
+const frontCardMesh = new THREE.Mesh(cardGeometry, frontCardMaterial);
+frontCardMesh.position.x = 2;
+frontCardMesh.rotation.y = Math.PI;
+scene.add(frontCardMesh);
+
+// 裏面のカード
+const backCardMaterial = new THREE.MeshBasicMaterial({ 
   map: backTexture,
   transparent: true
 });
-const secondCardMesh = new THREE.Mesh(cardGeometry, secondCardMaterial);
-secondCardMesh.position.x = 2; // 右側に配置
-scene.add(secondCardMesh);
+const backCardMesh = new THREE.Mesh(cardGeometry, backCardMaterial);
+backCardMesh.position.x = 2;
+scene.add(backCardMesh);
 
 // ゲームの状態
 let isGameOver = false;
@@ -93,17 +104,23 @@ function flipSecondCard() {
   let elapsedTime = 0;
 
   function flip() {
-    if (elapsedTime < flipDuration) {
-      requestAnimationFrame(flip);
-      elapsedTime += 16; // 16ms は約 60FPS
-      const rotation = (elapsedTime / flipDuration) * Math.PI; // 回転量を計算
-      secondCardMesh.rotation.y = rotation; // Y軸回転
-      if (rotation > Math.PI / 2 && secondCardMesh.material.map === backTexture) {
-        secondCardMesh.material.map = cardTextures[secondCardIndex]; // 回転の途中でカードを更新
-      }
-    } else {
-      secondCardMesh.rotation.y = 0; // 回転をリセット
+    if (elapsedTime >= flipDuration) {
+      // アニメーション完了時の処理
+      frontCardMesh.rotation.y = 0;
+      backCardMesh.rotation.y = Math.PI;
+      return;
     }
+
+    requestAnimationFrame(flip);
+    elapsedTime += 16; // 16ms は約 60FPS
+    const progress = elapsedTime / flipDuration;
+    // イーズアウト関数を使用してスムーズな回転を実現
+    const easeProgress = 1 - Math.pow(1 - progress, 3);
+    const rotation = easeProgress * Math.PI;
+    
+    // 表と裏のカードを同時に回転
+    frontCardMesh.rotation.y = Math.PI - rotation;
+    backCardMesh.rotation.y = rotation;
   }
 
   flip();
@@ -171,12 +188,14 @@ function startNewRound() {
   // 1枚目のカードを更新
   firstCardMesh.material.map = cardTextures[firstCardIndex];
   
-  // 2枚目のカードを裏面に戻す
-  secondCardMesh.material.map = backTexture;
+  // 2枚目のカードを更新
+  frontCardMaterial.map = cardTextures[secondCardIndex];
+  frontCardMaterial.needsUpdate = true;
   
   // 回転をリセット
   firstCardMesh.rotation.y = 0;
-  secondCardMesh.rotation.y = 0;
+  frontCardMesh.rotation.y = Math.PI;
+  backCardMesh.rotation.y = 0;
 }
 
 // アニメーションループ
