@@ -24,12 +24,28 @@ cardPaths.forEach(path => {
   cardTextures.push(loader.load(`./public/cards/${path}.png`));
 });
 
+// カードの裏面のテクスチャを読み込む
+const backTexture = loader.load('./public/cards/BackColor_Blue.png');
+
 // カードを表示するためのジオメトリと素材
 const cardGeometry = new THREE.PlaneGeometry(2, 3);
-let currentCardIndex = Math.floor(Math.random() * cardTextures.length); // 現在のカード
-const cardMaterial = new THREE.MeshBasicMaterial({ map: cardTextures[currentCardIndex] });
-const cardMesh = new THREE.Mesh(cardGeometry, cardMaterial);
-scene.add(cardMesh);
+
+// 1枚目のカード（表示される）
+let firstCardIndex = Math.floor(Math.random() * cardTextures.length);
+const firstCardMaterial = new THREE.MeshBasicMaterial({ map: cardTextures[firstCardIndex] });
+const firstCardMesh = new THREE.Mesh(cardGeometry, firstCardMaterial);
+firstCardMesh.position.x = -2; // 左側に配置
+scene.add(firstCardMesh);
+
+// 2枚目のカード（最初は裏面）
+let secondCardIndex = Math.floor(Math.random() * cardTextures.length);
+const secondCardMaterial = new THREE.MeshBasicMaterial({ map: backTexture });
+const secondCardMesh = new THREE.Mesh(cardGeometry, secondCardMaterial);
+secondCardMesh.position.x = 2; // 右側に配置
+scene.add(secondCardMesh);
+
+// ゲームの状態
+let isGameOver = false;
 
 // カメラの位置
 camera.position.z = 5;
@@ -46,7 +62,7 @@ scoreDisplay.textContent = `Score: ${score}`;
 document.body.appendChild(scoreDisplay);
 
 // カードをめくるアニメーション
-function flipCard(nextCardIndex) {
+function flipSecondCard() {
   const flipDuration = 500; // ミリ秒
   let elapsedTime = 0;
 
@@ -55,12 +71,12 @@ function flipCard(nextCardIndex) {
       requestAnimationFrame(flip);
       elapsedTime += 16; // 16ms は約 60FPS
       const rotation = (elapsedTime / flipDuration) * Math.PI; // 回転量を計算
-      cardMesh.rotation.y = rotation; // Y軸回転
-      if (rotation > Math.PI / 2 && cardMesh.material.map !== cardTextures[nextCardIndex]) {
-        cardMesh.material.map = cardTextures[nextCardIndex]; // 回転の途中でカードを更新
+      secondCardMesh.rotation.y = rotation; // Y軸回転
+      if (rotation > Math.PI / 2 && secondCardMesh.material.map === backTexture) {
+        secondCardMesh.material.map = cardTextures[secondCardIndex]; // 回転の途中でカードを更新
       }
     } else {
-      cardMesh.rotation.y = 0; // 回転をリセット
+      secondCardMesh.rotation.y = 0; // 回転をリセット
     }
   }
 
@@ -68,30 +84,56 @@ function flipCard(nextCardIndex) {
 }
 
 // ゲームロジック
-function nextCard(isHigher) {
-  const nextCardIndex = Math.floor(Math.random() * cardTextures.length); // ランダムに次のカードを選ぶ
-  const currentCardValue = (currentCardIndex % 13) + 1; // 現在のカードの値（1～13）
-  const nextCardValue = (nextCardIndex % 13) + 1; // 次のカードの値（1～13）
+function checkGuess(isHigher) {
+  if (isGameOver) {
+    // 新しいゲームを開始
+    isGameOver = false;
+    startNewRound();
+    return;
+  }
+
+  const firstCardValue = (firstCardIndex % 13) + 1; // 1枚目のカードの値（1～13）
+  const secondCardValue = (secondCardIndex % 13) + 1; // 2枚目のカードの値（1～13）
+
+  // カードをめくるアニメーションを開始
+  flipSecondCard();
 
   // 判定
   const isCorrect = isHigher
-    ? nextCardValue > currentCardValue
-    : nextCardValue < currentCardValue;
+    ? secondCardValue > firstCardValue
+    : secondCardValue < firstCardValue;
 
-  if (isCorrect) {
-    score++;
-    scoreDisplay.textContent = `Score: ${score}`;
-  } else {
-    alert(`Wrong! Game Over. Your final score is ${score}`);
-    score = 0;
-    scoreDisplay.textContent = `Score: ${score}`;
-  }
+  setTimeout(() => {
+    if (isCorrect) {
+      score++;
+      scoreDisplay.textContent = `Score: ${score}`;
+      setTimeout(() => {
+        startNewRound();
+      }, 1000);
+    } else {
+      alert(`Wrong! Game Over. Your final score is ${score}`);
+      score = 0;
+      scoreDisplay.textContent = `Score: ${score}`;
+      isGameOver = true;
+    }
+  }, 500);
+}
 
-  // カードをめくるアニメーションを開始
-  flipCard(nextCardIndex);
-
-  // 現在のカードを更新
-  currentCardIndex = nextCardIndex;
+// 新しいラウンドを開始
+function startNewRound() {
+  // 新しいカードをセット
+  firstCardIndex = Math.floor(Math.random() * cardTextures.length);
+  secondCardIndex = Math.floor(Math.random() * cardTextures.length);
+  
+  // 1枚目のカードを更新
+  firstCardMesh.material.map = cardTextures[firstCardIndex];
+  
+  // 2枚目のカードを裏面に戻す
+  secondCardMesh.material.map = backTexture;
+  
+  // 回転をリセット
+  firstCardMesh.rotation.y = 0;
+  secondCardMesh.rotation.y = 0;
 }
 
 // アニメーションループ
@@ -108,7 +150,7 @@ highButton.style.position = 'absolute';
 highButton.style.top = '50px';
 highButton.style.left = '10px';
 highButton.style.fontSize = '16px';
-highButton.onclick = () => nextCard(true);
+highButton.onclick = () => checkGuess(true);
 document.body.appendChild(highButton);
 
 const lowButton = document.createElement('button');
@@ -117,5 +159,5 @@ lowButton.style.position = 'absolute';
 lowButton.style.top = '50px';
 lowButton.style.left = '80px';
 lowButton.style.fontSize = '16px';
-lowButton.onclick = () => nextCard(false);
+lowButton.onclick = () => checkGuess(false);
 document.body.appendChild(lowButton);
